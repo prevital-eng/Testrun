@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FileTask</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root{
+    --ink:#1f2b3d;
+    --paper:#f7f3ec;
+    --paper-raised:#fffdf9;
+    --clay:#c4623f;
+    --clay-dark:#a84f30;
+    --sage:#7d9b76;
+    --gold:#d4a843;
+    --line:#e2dac9;
+    --ink-soft:#5b6878;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);}
+  body{
+    font-family:'Heebo',sans-serif;
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.serif{
+    font-family:'Literata',serif;
+  }
+  button{font-family:inherit;cursor:pointer;}
+  input,textarea,select{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--clay);outline-offset:2px;}
+  #root{min-height:100vh;}
+
+  .app{
+    max-width:720px;
+    margin:0 auto;
+    padding:0 16px 96px;
+    min-height:100vh;
+  }
+  .header{
+    padding:28px 4px 18px;
+    position:sticky;
+    top:0;
+    background:linear-gradient(var(--paper) 80%, transparent);
+    z-index:5;
+  }
+  .header h1{
+    font-size:28px;
+    font-weight:700;
+    margin:0 0 2px;
+    letter-spacing:-0.01em;
+  }
+  .header .sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    margin:0;
+  }
+
+  .tabs{
+    display:flex;
+    gap:6px;
+    margin:18px 0 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .tab{
+    background:none;
+    border:none;
+    padding:10px 4px;
+    font-size:15px;
+    font-weight:600;
+    color:var(--ink-soft);
+    border-bottom:2px solid transparent;
+    margin-bottom:-1px;
+    transition:color .15s;
+  }
+  .tab.active{
+    color:var(--ink);
+    border-bottom-color:var(--clay);
+  }
+  .tab .count{
+    display:inline-block;
+    min-width:18px;
+    padding:0 4px;
+    margin-right:6px;
+    background:var(--line);
+    border-radius:9px;
+    font-size:11px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+  .tab.active .count{
+    background:var(--clay);
+    color:#fff;
+  }
+
+  .search-row{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .search-box{
+    flex:1;
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    padding:11px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--paper-raised);
+    font-size:15px;
+    color:var(--ink);
+  }
+  .search-box input::placeholder{color:#a9a193;}
+
+  .fab{
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    border:none;
+    background:var(--ink);
+    color:#fff;
+    font-size:22px;
+    line-height:1;
+    flex-shrink:0;
+  }
+  .fab:active{transform:scale(.96);}
+
+  /* card - index card metaphor */
+  .card{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:4px 4px 10px 10px;
+    padding:14px 16px 14px 14px;
+    margin-bottom:12px;
+    box-shadow:0 1px 0 var(--line), 2px 3px 8px -4px rgba(31,43,61,.15);
+  }
+  .card::before{
+    /* folded corner tab */
+    content:"";
+    position:absolute;
+    top:0;
+    right:18px;
+    width:34px;
+    height:8px;
+    background:var(--line);
+    border-radius:0 0 3px 3px;
+  }
+  .card.linked::before{
+    background:var(--clay);
+  }
+  .card-top{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .card-title{
+    font-weight:600;
+    font-size:15.5px;
+    margin:0 0 4px;
+    line-height:1.35;
+  }
+  .card-meta{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    padding:2px 9px;
+    border-radius:20px;
+    font-size:11.5px;
+    font-weight:600;
+    background:var(--line);
+    color:var(--ink-soft);
+  }
+  .pill.due-today{background:#fbeed2;color:#8a6113;}
+  .pill.overdue{background:#f6dcd2;color:var(--clay-dark);}
+  .pill.done{background:#e3ebe1;color:#4d6448;}
+
+  .link-row{
+    margin-top:8px;
+    padding-top:8px;
+    border-top:1px dashed var(--line);
+    font-size:12.5px;
+    color:var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .link-row .stitch{
+    color:var(--clay);
+    font-weight:700;
+  }
+
+  .card-actions{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+  }
+  .icon-btn{
+    width:32px;
+    height:32px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-size:15px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .icon-btn:active{background:var(--line);}
+  .icon-btn.danger{color:var(--clay-dark);border-color:#ecd3c8;}
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+  }
+  .empty .glyph{
+    font-size:34px;
+    margin-bottom:10px;
+    opacity:.5;
+  }
+  .empty p{margin:4px 0;font-size:14px;}
+
+  /* modal / sheet */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(31,43,61,.4);
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:50;
+  }
+  .sheet{
+    background:var(--paper);
+    width:100%;
+    max-width:720px;
+    border-radius:18px 18px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh;
+    overflow-y:auto;
+    box-shadow:0 -8px 30px rgba(0,0,0,.15);
+  }
+  .sheet-handle{
+    width:36px;
+    height:4px;
+    background:var(--line);
+    border-radius:3px;
+    margin:0 auto 16px;
+  }
+  .sheet h2{
+    font-size:19px;
+    margin:0 0 16px;
+  }
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:5px;
+  }
+  .field input[type=text],
+  .field input[type=date],
+  .field input[type=time],
+  .field input[type=url],
+  .field textarea,
+  .field select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--paper-raised);
+    font-size:15px;
+    color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:80px;}
+  .field-row{display:flex;gap:10px;}
+  .field-row .field{flex:1;}
+
+  .chip-select{display:flex;gap:6px;flex-wrap:wrap;}
+  .chip{
+    padding:7px 13px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--paper-raised);
+    font-size:13.5px;
+    color:var(--ink-soft);
+  }
+  .chip.selected{
+    background:var(--ink);
+    color:#fff;
+    border-color:var(--ink);
+  }
+
+  .file-link-list{
+    border:1px solid var(--line);
+    border-radius:8px;
+    max-height:160px;
+    overflow-y:auto;
+  }
+  .file-link-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:9px 12px;
+    border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .file-link-row:last-child{border-bottom:none;}
+  .file-link-row input{margin:0;}
+
+  .sheet-actions{
+    display:flex;
+    gap:10px;
+    margin-top:18px;
+  }
+  .btn{
+    flex:1;
+    padding:12px;
+    border-radius:10px;
+    border:none;
+    font-size:15px;
+    font-weight:600;
+  }
+  .btn.primary{background:var(--ink);color:#fff;}
+  .btn.secondary{background:var(--line);color:var(--ink);}
+  .btn.danger{background:var(--clay);color:#fff;}
+  .btn:active{transform:scale(.98);}
+
+  .bottom-nav{
+    position:fixed;
+    bottom:0;
+    left:0;right:0;
+    background:var(--paper-raised);
+    border-top:1px solid var(--line);
+    display:flex;
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+    z-index:10;
+  }
+  .nav-item{
+    flex:1;
+    background:none;
+    border:none;
+    padding:8px 4px;
+    font-size:11.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+  }
+  .nav-item .glyph{font-size:19px;}
+  .nav-item.active{color:var(--clay);}
+
+  .draft-box{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px;
+    background:var(--paper-raised);
+    font-size:14.5px;
+    line-height:1.5;
+    margin-bottom:10px;
+  }
+  .channel-row{display:flex;gap:8px;margin-bottom:12px;}
+  .channel-btn{
+    flex:1;
+    padding:10px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--paper-raised);
+    font-size:14px;
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .channel-btn.selected{border-color:var(--clay);color:var(--clay-dark);background:#fbf1ec;}
+
+  .toast{
+    position:fixed;
+    bottom:90px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:30px;
+    font-size:13.5px;
+    z-index:100;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useCallback } = React;
+
+// ---- CONFIG ----
+// כתובת ה-Apps Script Web App. יש להחליף לאחר הפריסה.
+const API_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+
+// ---- MOCK DATA (used until API_URL is connected) ----
+const MOCK_FILES = [
+  { id:"f1", name:"חוזה שכירות 2026.pdf", category:"חשוב", driveUrl:"#", addedAt:"2026-06-10" },
+  { id:"f2", name:"קבלה - ועד בית יוני.jpg", category:"כספים", driveUrl:"#", addedAt:"2026-06-18" },
+  { id:"f3", name:"תוצאות בדיקה.pdf", category:"בריאות", driveUrl:"#", addedAt:"2026-06-20" },
+];
+const MOCK_TASKS = [
+  { id:"t1", title:"לשלוח אישור קבלה לחוזה לעו\"ד", notes:"לאשר שקראתי את הסעיף המתוקן", due:"2026-06-28", fileIds:["f1"], done:false },
+  { id:"t2", title:"לעקוב אחרי תשובת קופת החולים", notes:"", due:"2026-06-27", fileIds:["f3"], done:false },
+  { id:"t3", title:"לארכב קבלות יוני", notes:"", due:"2026-06-30", fileIds:["f2"], done:false },
+];
+
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+
+function fmtDate(iso){
+  if(!iso) return "";
+  const [y,m,d] = iso.split("-");
+  return `${d}.${m}`;
+}
+
+function dueState(iso, done){
+  if(done) return "done";
+  if(!iso) return "";
+  const today = todayStr();
+  if(iso < today) return "overdue";
+  if(iso === today) return "due-today";
+  return "";
+}
+
+function dueLabel(iso, done){
+  if(done) return "בוצע";
+  const state = dueState(iso, done);
+  if(state==="overdue") return "באיחור";
+  if(state==="due-today") return "היום";
+  return fmtDate(iso);
+}
+
+// ---------- API layer ----------
+// כל הקריאות עוברות דרך Apps Script. אם אין חיבור עדיין - עובדים על נתוני דמו.
+const api = {
+  connected: API_URL && API_URL.indexOf("PASTE_") === -1,
+  async getAll(){
+    if(!api.connected) return { files: MOCK_FILES, tasks: MOCK_TASKS };
+    const res = await fetch(`${API_URL}?action=getAll`);
+    return res.json();
+  },
+  async saveFile(file){
+    if(!api.connected) return file;
+    const res = await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify({ action:"saveFile", payload:file })
+    });
+    return res.json();
+  },
+  async saveTask(task){
+    if(!api.connected) return task;
+    const res = await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify({ action:"saveTask", payload:task })
+    });
+    return res.json();
+  },
+  async deleteItem(type, id){
+    if(!api.connected) return true;
+    const res = await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify({ action:"delete", payload:{ type, id } })
+    });
+    return res.json();
+  },
+  async queueMessage(msg){
+    if(!api.connected) return msg;
+    const res = await fetch(API_URL, {
+      method:"POST",
+      body: JSON.stringify({ action:"queueMessage", payload: msg })
+    });
+    return res.json();
+  }
+};
+
+// ---------- small components ----------
+function Pill({children, kind}){
+  return <span className={`pill ${kind||""}`}>{children}</span>;
+}
+
+function Toast({message, onDone}){
+  useEffect(()=>{
+    const t = setTimeout(onDone, 2200);
+    return ()=>clearTimeout(t);
+  },[]);
+  return <div className="toast">{message}</div>;
+}
+
+function EmptyState({glyph, lines}){
+  return (
+    <div className="empty">
+      <div className="glyph">{glyph}</div>
+      {lines.map((l,i)=><p key={i}>{l}</p>)}
+    </div>
+  );
+}
+
+// ---------- File card ----------
+function FileCard({file, linkedTaskTitles, onOpen, onEdit, onDelete}){
+  return (
+    <div className={`card ${linkedTaskTitles.length ? "linked":""}`}>
+      <div className="card-top">
+        <div style={{minWidth:0}}>
+          <p className="card-title">{file.name}</p>
+          <div className="card-meta">
+            <Pill>{file.category||"לא מסווג"}</Pill>
+            <span>נוסף {fmtDate(file.addedAt)}</span>
+          </div>
+        </div>
+        <div className="card-actions">
+          <button className="icon-btn" onClick={()=>onOpen(file)} aria-label="פתח קובץ">⤴</button>
+          <button className="icon-btn" onClick={()=>onEdit(file)} aria-label="ערוך">✎</button>
+          <button className="icon-btn danger" onClick={()=>onDelete(file)} aria-label="מחק">🗑</button>
+        </div>
+      </div>
+      {linkedTaskTitles.length>0 &&
+        <div className="link-row">
+          <span className="stitch">⟆</span>
+          <span>מקושר ל: {linkedTaskTitles.join("• ")}</span>
+        </div>
+      }
+    </div>
+  );
+}
+
+// ---------- Task card ----------
+function TaskCard({task, linkedFileNames, onToggleDone, onEdit, onDelete, onCompose}){
+  const state = dueState(task.due, task.done);
+  return (
+    <div className={`card ${linkedFileNames.length ? "linked":""}`}>
+      <div className="card-top">
+        <div style={{minWidth:0, display:"flex", gap:10}}>
+          <button
+            className="icon-btn"
+            style={{borderRadius:"50%", flexShrink:0, marginTop:1}}
+            onClick={()=>onToggleDone(task)}
+            aria-label="סמן כבוצע"
+          >{task.done ? "✓" : ""}</button>
+          <div>
+            <p className="card-title" style={task.done?{textDecoration:"line-through", color:"var(--ink-soft)"}:{}}>{task.title}</p>
+            <div className="card-meta">
+              <Pill kind={state}>{dueLabel(task.due, task.done)}</Pill>
+              {task.notes && <span>{task.notes}</span>}
+            </div>
+          </div>
+        </div>
+        <div className="card-actions">
+          <button className="icon-btn" onClick={()=>onCompose(task)} aria-label="כתוב הודעה">✉</button>
+          <button className="icon-btn" onClick={()=>onEdit(task)} aria-label="ערוך">✎</button>
+          <button className="icon-btn danger" onClick={()=>onDelete(task)} aria-label="מחק">🗑</button>
+        </div>
+      </div>
+      {linkedFileNames.length>0 &&
+        <div className="link-row">
+          <span className="stitch">⟆</span>
+          <span>קבצים: {linkedFileNames.join("• ")}</span>
+        </div>
+      }
+    </div>
+  );
+}
+
+// ---------- File edit sheet ----------
+function FileSheet({file, onSave, onClose}){
+  const [name, setName] = useState(file?.name || "");
+  const [category, setCategory] = useState(file?.category || "");
+  const [driveUrl, setDriveUrl] = useState(file?.driveUrl || "");
+  const categories = ["חשוב","כספים","בריאות","משפחה","עבודה","לא מסווג"];
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="sheet-handle"/>
+        <h2>{file ? "ערוך קובץ" : "קובץ חדש"}</h2>
+        <div className="field">
+          <label>שם הקובץ</label>
+          <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="לדוגמה: חוזה שכירות.pdf" />
+        </div>
+        <div className="field">
+          <label>קישור ל-Google Drive</label>
+          <input type="url" value={driveUrl} onChange={e=>setDriveUrl(e.target.value)} placeholder="הדבק כאן קישור לקובץ ב-Drive" />
+        </div>
+        <div className="field">
+          <label>קטגוריה</label>
+          <div className="chip-select">
+            {categories.map(c=>(
+              <button key={c} className={`chip ${category===c?"selected":""}`} onClick={()=>setCategory(c)}>{c}</button>
+            ))}
+          </div>
+        </div>
+        <div className="sheet-actions">
+          <button className="btn secondary" onClick={onClose}>ביטול</button>
+          <button className="btn primary" onClick={()=>{
+            if(!name.trim()) return;
+            onSave({
+              id: file?.id || ("f"+Date.now()),
+              name: name.trim(),
+              category,
+              driveUrl,
+              addedAt: file?.addedAt || todayStr()
+            });
+          }}>שמירה</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Task edit sheet ----------
+function TaskSheet({task, files, onSave, onClose}){
+  const [title, setTitle] = useState(task?.title || "");
+  const [notes, setNotes] = useState(task?.notes || "");
+  const [due, setDue] = useState(task?.due || todayStr());
+  const [fileIds, setFileIds] = useState(task?.fileIds || []);
+
+  const toggleFile = (id) => {
+    setFileIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
+  };
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="sheet-handle"/>
+        <h2>{task ? "ערוך משימה" : "משימה חדשה"}</h2>
+        <div className="field">
+          <label>כותרת המשימה</label>
+          <input type="text" value={title} onChange={e=>setTitle(e.target.value)} placeholder="מה צריך לעשות?" />
+        </div>
+        <div className="field">
+          <label>תאריך לביצוע / תזכורת</label>
+          <input type="date" value={due} onChange={e=>setDue(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>הערות</label>
+          <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="פרטים נוספים (לא חובה)" />
+        </div>
+        <div className="field">
+          <label>קישור לקבצים</label>
+          <div className="file-link-list">
+            {files.length===0 && <div style={{padding:12, fontSize:13, color:"var(--ink-soft)"}}>אין קבצים עדיין</div>}
+            {files.map(f=>(
+              <label key={f.id} className="file-link-row">
+                <input type="checkbox" checked={fileIds.includes(f.id)} onChange={()=>toggleFile(f.id)} />
+                <span>{f.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="sheet-actions">
+          <button className="btn secondary" onClick={onClose}>ביטול</button>
+          <button className="btn primary" onClick={()=>{
+            if(!title.trim()) return;
+            onSave({
+              id: task?.id || ("t"+Date.now()),
+              title: title.trim(),
+              notes,
+              due,
+              fileIds,
+              done: task?.done || false
+            });
+          }}>שמירה</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Compose message sheet ----------
+function ComposeSheet({task, linkedFiles, onClose, onQueue, onSendNow}){
+  const draftFor = (channel) => {
+    const fileList = linkedFiles.map(f=>f.name).join(", ");
+    const base = `שלום,\n\nבנוגע ל"${task.title}"${fileList ? ` (קובץ: ${fileList})`:""}.\n\n`;
+    return base;
+  };
+
+  const [channel, setChannel] = useState("email");
+  const [text, setText] = useState(draftFor("email"));
+  const [scheduleDate, setScheduleDate] = useState(task.due || todayStr());
+  const [scheduleTime, setScheduleTime] = useState("09:00");
+  const [recipient, setRecipient] = useState("");
+  const [mode, setMode] = useState("schedule"); // schedule | now
+
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="sheet-handle"/>
+        <h2>כתיבת הודעה</h2>
+
+        <div className="channel-row">
+          <button className={`channel-btn ${channel==="email"?"selected":""}`} onClick={()=>setChannel("email")}>✉ אימייל</button>
+          <button className={`channel-btn ${channel==="whatsapp"?"selected":""}`} onClick={()=>setChannel("whatsapp")}>💬 וואטסאפ</button>
+        </div>
+
+        <div className="field">
+          <label>{channel==="email" ? "אימייל הנמען" : "מספר טלפון (כולל קידומת מדינה, לדוגמה 972501234567)"}</label>
+          <input type="text" value={recipient} onChange={e=>setRecipient(e.target.value)} placeholder={channel==="email" ? "name@example.com" : "972501234567"} />
+        </div>
+
+        <div className="field">
+          <label>תוכן ההודעה (ניתן לעריכה)</label>
+          <textarea value={text} onChange={e=>setText(e.target.value)} style={{minHeight:120}} />
+        </div>
+
+        {channel==="email" && (
+          <>
+            <div className="field" style={{marginBottom:6}}>
+              <label>מצב שליחה</label>
+              <div className="chip-select">
+                <button className={`chip ${mode==="schedule"?"selected":""}`} onClick={()=>setMode("schedule")}>תזמון לשליחה</button>
+                <button className={`chip ${mode==="now"?"selected":""}`} onClick={()=>setMode("now")}>אישור ושליחה כעת</button>
+              </div>
+            </div>
+            {mode==="schedule" && (
+              <div className="field-row">
+                <div className="field">
+                  <label>תאריך שליחה</label>
+                  <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} />
+                </div>
+                <div className="field">
+                  <label>שעה</label>
+                  <input type="time" value={scheduleTime} onChange={e=>setScheduleTime(e.target.value)} />
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {channel==="whatsapp" && (
+          <div className="draft-box" style={{background:"#fbf1ec", borderColor:"#ecd3c8"}}>
+            לוואטסאפ אין שליחה אוטומטית. בלחיצה על "פתח בוואטסאפ" ההודעה תיפתח מוכנה בטלפון שלך — לחיצת "שלח" אחת ותסיים.
+          </div>
+        )}
+
+        <div className="sheet-actions">
+          <button className="btn secondary" onClick={onClose}>ביטול</button>
+          {channel==="whatsapp" ? (
+            <button className="btn primary" onClick={()=>{
+              const url = `https://wa.me/${recipient.replace(/\D/g,"")}?text=${encodeURIComponent(text)}`;
+              window.open(url, "_blank");
+              onSendNow({channel, recipient, text, taskId:task.id});
+            }}>פתח בוואטסאפ</button>
+          ) : mode==="now" ? (
+            <button className="btn primary" onClick={()=>onSendNow({channel, recipient, text, taskId:task.id})}>שלח כעת</button>
+          ) : (
+            <button className="btn primary" onClick={()=>onQueue({
+              channel, recipient, text, taskId:task.id,
+              sendAt: `${scheduleDate}T${scheduleTime}`
+            })}>תזמן שליחה</button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Confirm delete ----------
+function ConfirmDelete({label, onConfirm, onClose}){
+  return (
+    <div className="overlay" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()} style={{maxWidth:420}}>
+        <div className="sheet-handle"/>
+        <h2>מחיקה</h2>
+        <p style={{fontSize:14.5, color:"var(--ink-soft)", marginTop:0}}>למחוק את "{label}"? לא ניתן לשחזר.</p>
+        <div className="sheet-actions">
+          <button className="btn secondary" onClick={onClose}>ביטול</button>
+          <button className="btn danger" onClick={onConfirm}>מחיקה</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Main App ----------
+function App(){
+  const [tab, setTab] = useState("today"); // today | files | tasks
+  const [files, setFiles] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [toast, setToast] = useState(null);
+
+  const [editingFile, setEditingFile] = useState(null);
+  const [showFileSheet, setShowFileSheet] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
+  const [showTaskSheet, setShowTaskSheet] = useState(false);
+  const [composeTask, setComposeTask] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null); // {type, item}
+
+  useEffect(()=>{
+    api.getAll().then(data=>{
+      setFiles(data.files||[]);
+      setTasks(data.tasks||[]);
+      setLoading(false);
+    });
+  },[]);
+
+  const fileNameById = useMemo(()=>{
+    const m = {};
+    files.forEach(f=>m[f.id]=f.name);
+    return m;
+  },[files]);
+
+  const taskTitleById = useMemo(()=>{
+    const m = {};
+    tasks.forEach(t=>m[t.id]=t.title);
+    return m;
+  },[tasks]);
+
+  const linkedTasksForFile = useCallback((fileId)=>{
+    return tasks.filter(t=>t.fileIds?.includes(fileId)).map(t=>t.title);
+  },[tasks]);
+
+  const linkedFilesForTask = useCallback((task)=>{
+    return (task.fileIds||[]).map(id=>fileNameById[id]).filter(Boolean);
+  },[fileNameById]);
+
+  const filteredFiles = useMemo(()=>{
+    if(!query.trim()) return files;
+    const q = query.trim().toLowerCase();
+    return files.filter(f => f.name.toLowerCase().includes(q) || (f.category||"").toLowerCase().includes(q));
+  },[files, query]);
+
+  const filteredTasks = useMemo(()=>{
+    if(!query.trim()) return tasks;
+    const q = query.trim().toLowerCase();
+    return tasks.filter(t => t.title.toLowerCase().includes(q) || (t.notes||"").toLowerCase().includes(q));
+  },[tasks, query]);
+
+  const todayTasks = useMemo(()=>{
+    const today = todayStr();
+    return tasks
+      .filter(t=>!t.done && t.due && t.due <= today)
+      .sort((a,b)=> a.due.localeCompare(b.due));
+  },[tasks]);
+
+  // ----- handlers -----
+  const saveFile = async (file) => {
+    setFiles(prev=>{
+      const exists = prev.some(f=>f.id===file.id);
+      return exists ? prev.map(f=>f.id===file.id?file:f) : [file, ...prev];
+    });
+    setShowFileSheet(false);
+    setEditingFile(null);
+    setToast("הקובץ נשמר");
+    await api.saveFile(file);
+  };
+
+  const saveTask = async (task) => {
+    setTasks(prev=>{
+      const exists = prev.some(t=>t.id===task.id);
+      return exists ? prev.map(t=>t.id===task.id?task:t) : [task, ...prev];
+    });
+    setShowTaskSheet(false);
+    setEditingTask(null);
+    setToast("המשימה נשמרה");
+    await api.saveTask(task);
+  };
+
+  const toggleDone = async (task) => {
+    const updated = {...task, done: !task.done};
+    setTasks(prev=>prev.map(t=>t.id===task.id?updated:t));
+    await api.saveTask(updated);
+  };
+
+  const confirmDelete = async () => {
+    const {type, item} = deleteTarget;
+    if(type==="file"){
+      setFiles(prev=>prev.filter(f=>f.id!==item.id));
+    } else {
+      setTasks(prev=>prev.filter(t=>t.id!==item.id));
+    }
+    setDeleteTarget(null);
+    setToast("נמחק");
+    await api.deleteItem(type, item.id);
+  };
+
+  const openFile = (file) => {
+    if(file.driveUrl && file.driveUrl !== "#") window.open(file.driveUrl, "_blank");
+  };
+
+  const handleQueueMessage = async (msg) => {
+    setComposeTask(null);
+    setToast("ההודעה תוזמנה לשליחה");
+    await api.queueMessage(msg);
+  };
+
+  const handleSendNow = async (msg) => {
+    setComposeTask(null);
+    setToast(msg.channel==="whatsapp" ? "נפתח בוואטסאפ" : "ההודעה נשלחה");
+    await api.queueMessage({...msg, sendAt: new Date().toISOString(), sendImmediately:true});
+  };
+
+  const tabCounts = {
+    today: todayTasks.length,
+    files: files.length,
+    tasks: tasks.filter(t=>!t.done).length
+  };
+
+  return (
+    <div className="app">
+      <div className="header">
+        <h1 className="serif">FileTask</h1>
+        <p className="sub">{api.connected ? "מחובר ל-Google Sheets" : "מצב תצוגה מקדימה — לא מחובר עדיין"}</p>
+      </div>
+
+      <div className="tabs">
+        <button className={`tab ${tab==="today"?"active":""}`} onClick={()=>setTab("today")}>
+          <span className="count">{tabCounts.today}</span>היום
+        </button>
+        <button className={`tab ${tab==="files"?"active":""}`} onClick={()=>setTab("files")}>
+          <span className="count">{tabCounts.files}</span>קבצים
+        </button>
+        <button className={`tab ${tab==="tasks"?"active":""}`} onClick={()=>setTab("tasks")}>
+          <span className="count">{tabCounts.tasks}</span>משימות
+        </button>
+      </div>
+
+      {tab !== "today" && (
+        <div className="search-row">
+          <div className="search-box">
+            <input
+              type="text"
+              placeholder={tab==="files" ? "חיפוש קובץ לפי שם או קטגוריה..." : "חיפוש משימה..."}
+              value={query}
+              onChange={e=>setQuery(e.target.value)}
+            />
+          </div>
+          <button className="fab" onClick={()=> tab==="files" ? setShowFileSheet(true) : setShowTaskSheet(true)} aria-label="הוסף">+</button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="empty"><div className="glyph">⟳</div><p>טוען...</p></div>
+      ) : (
+        <>
+          {tab==="today" && (
+            todayTasks.length===0 ? (
+              <EmptyState glyph="☼" lines={["אין משימות שדורשות תשומת לב היום.", "כל הכבוד!"]} />
+            ) : (
+              todayTasks.map(t=>(
+                <TaskCard
+                  key={t.id}
+                  task={t}
+                  linkedFileNames={linkedFilesForTask(t)}
+                  onToggleDone={toggleDone}
+                  onEdit={(t)=>{setEditingTask(t); setShowTaskSheet(true);}}
+                  onDelete={(t)=>setDeleteTarget({type:"task", item:t})}
+                  onCompose={(t)=>setComposeTask(t)}
+                />
+              ))
+            )
+          )}
+
+          {tab==="files" && (
+            filteredFiles.length===0 ? (
+              <EmptyState glyph="🗂" lines={["אין קבצים עדיין.", "הוסיפי קובץ עם הכפתור +"]} />
+            ) : (
+              filteredFiles.map(f=>(
+                <FileCard
+                  key={f.id}
+                  file={f}
+                  linkedTaskTitles={linkedTasksForFile(f.id)}
+                  onOpen={openFile}
+                  onEdit={(f)=>{setEditingFile(f); setShowFileSheet(true);}}
+                  onDelete={(f)=>setDeleteTarget({type:"file", item:f})}
+                />
+              ))
+            )
+          )}
+
+          {tab==="tasks" && (
+            filteredTasks.length===0 ? (
+              <EmptyState glyph="✓" lines={["אין משימות עדיין.", "הוסיפי משימה עם הכפתור +"]} />
+            ) : (
+              filteredTasks
+                .slice()
+                .sort((a,b)=>(a.done - b.done) || (a.due||"").localeCompare(b.due||""))
+                .map(t=>(
+                  <TaskCard
+                    key={t.id}
+                    task={t}
+                    linkedFileNames={linkedFilesForTask(t)}
+                    onToggleDone={toggleDone}
+                    onEdit={(t)=>{setEditingTask(t); setShowTaskSheet(true);}}
+                    onDelete={(t)=>setDeleteTarget({type:"task", item:t})}
+                    onCompose={(t)=>setComposeTask(t)}
+                  />
+                ))
+            )
+          )}
+        </>
+      )}
+
+      <div className="bottom-nav">
+        <button className={`nav-item ${tab==="today"?"active":""}`} onClick={()=>setTab("today")}>
+          <span className="glyph">☼</span>היום
+        </button>
+        <button className={`nav-item ${tab==="files"?"active":""}`} onClick={()=>setTab("files")}>
+          <span className="glyph">🗂</span>קבצים
+        </button>
+        <button className={`nav-item ${tab==="tasks"?"active":""}`} onClick={()=>setTab("tasks")}>
+          <span className="glyph">✓</span>משימות
+        </button>
+      </div>
+
+      {showFileSheet && (
+        <FileSheet
+          file={editingFile}
+          onSave={saveFile}
+          onClose={()=>{setShowFileSheet(false); setEditingFile(null);}}
+        />
+      )}
+
+      {showTaskSheet && (
+        <TaskSheet
+          task={editingTask}
+          files={files}
+          onSave={saveTask}
+          onClose={()=>{setShowTaskSheet(false); setEditingTask(null);}}
+        />
+      )}
+
+      {composeTask && (
+        <ComposeSheet
+          task={composeTask}
+          linkedFiles={files.filter(f=>composeTask.fileIds?.includes(f.id))}
+          onClose={()=>setComposeTask(null)}
+          onQueue={handleQueueMessage}
+          onSendNow={handleSendNow}
+        />
+      )}
+
+      {deleteTarget && (
+        <ConfirmDelete
+          label={deleteTarget.type==="file" ? deleteTarget.item.name : deleteTarget.item.title}
+          onConfirm={confirmDelete}
+          onClose={()=>setDeleteTarget(null)}
+        />
+      )}
+
+      {toast && <Toast message={toast} onDone={()=>setToast(null)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
