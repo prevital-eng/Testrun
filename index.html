@@ -1,1078 +1,1027 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<html dir="rtl" lang="he">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FileTask</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,600;7..72,700&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone@7/babel.min.js"></script>
-<style>
-  :root{
-    --ink:#1f2b3d;
-    --paper:#f7f3ec;
-    --paper-raised:#fffdf9;
-    --clay:#c4623f;
-    --clay-dark:#a84f30;
-    --sage:#7d9b76;
-    --gold:#d4a843;
-    --line:#e2dac9;
-    --ink-soft:#5b6878;
-  }
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:var(--paper);}
-  body{
-    font-family:'Heebo',sans-serif;
-    color:var(--ink);
-    -webkit-font-smoothing:antialiased;
-  }
-  h1,h2,h3,.serif{
-    font-family:'Literata',serif;
-  }
-  button{font-family:inherit;cursor:pointer;}
-  input,textarea,select{font-family:inherit;}
-  :focus-visible{outline:2px solid var(--clay);outline-offset:2px;}
-  #root{min-height:100vh;}
-
-  .app{
-    max-width:720px;
-    margin:0 auto;
-    padding:0 16px 96px;
-    min-height:100vh;
-  }
-  .header{
-    padding:28px 4px 18px;
-    position:sticky;
-    top:0;
-    background:linear-gradient(var(--paper) 80%, transparent);
-    z-index:5;
-  }
-  .header h1{
-    font-size:28px;
-    font-weight:700;
-    margin:0 0 2px;
-    letter-spacing:-0.01em;
-  }
-  .header .sub{
-    color:var(--ink-soft);
-    font-size:14px;
-    margin:0;
-  }
-
-  .tabs{
-    display:flex;
-    gap:6px;
-    margin:18px 0 20px;
-    border-bottom:1px solid var(--line);
-  }
-  .tab{
-    background:none;
-    border:none;
-    padding:10px 4px;
-    font-size:15px;
-    font-weight:600;
-    color:var(--ink-soft);
-    border-bottom:2px solid transparent;
-    margin-bottom:-1px;
-    transition:color .15s;
-  }
-  .tab.active{
-    color:var(--ink);
-    border-bottom-color:var(--clay);
-  }
-  .tab .count{
-    display:inline-block;
-    min-width:18px;
-    padding:0 4px;
-    margin-right:6px;
-    background:var(--line);
-    border-radius:9px;
-    font-size:11px;
-    font-weight:700;
-    color:var(--ink-soft);
-  }
-  .tab.active .count{
-    background:var(--clay);
-    color:#fff;
-  }
-
-  .search-row{
-    display:flex;
-    gap:8px;
-    margin-bottom:16px;
-  }
-  .search-box{
-    flex:1;
-    position:relative;
-  }
-  .search-box input{
-    width:100%;
-    padding:11px 14px;
-    border:1px solid var(--line);
-    border-radius:10px;
-    background:var(--paper-raised);
-    font-size:15px;
-    color:var(--ink);
-  }
-  .search-box input::placeholder{color:#a9a193;}
-
-  .fab{
-    width:44px;
-    height:44px;
-    border-radius:10px;
-    border:none;
-    background:var(--ink);
-    color:#fff;
-    font-size:22px;
-    line-height:1;
-    flex-shrink:0;
-  }
-  .fab:active{transform:scale(.96);}
-
-  /* card - index card metaphor */
-  .card{
-    position:relative;
-    background:var(--paper-raised);
-    border:1px solid var(--line);
-    border-radius:4px 4px 10px 10px;
-    padding:14px 16px 14px 14px;
-    margin-bottom:12px;
-    box-shadow:0 1px 0 var(--line), 2px 3px 8px -4px rgba(31,43,61,.15);
-  }
-  .card::before{
-    /* folded corner tab */
-    content:"";
-    position:absolute;
-    top:0;
-    right:18px;
-    width:34px;
-    height:8px;
-    background:var(--line);
-    border-radius:0 0 3px 3px;
-  }
-  .card.linked::before{
-    background:var(--clay);
-  }
-  .card-top{
-    display:flex;
-    align-items:flex-start;
-    justify-content:space-between;
-    gap:10px;
-  }
-  .card-title{
-    font-weight:600;
-    font-size:15.5px;
-    margin:0 0 4px;
-    line-height:1.35;
-  }
-  .card-meta{
-    font-size:12.5px;
-    color:var(--ink-soft);
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .pill{
-    display:inline-flex;
-    align-items:center;
-    padding:2px 9px;
-    border-radius:20px;
-    font-size:11.5px;
-    font-weight:600;
-    background:var(--line);
-    color:var(--ink-soft);
-  }
-  .pill.due-today{background:#fbeed2;color:#8a6113;}
-  .pill.overdue{background:#f6dcd2;color:var(--clay-dark);}
-  .pill.done{background:#e3ebe1;color:#4d6448;}
-
-  .link-row{
-    margin-top:8px;
-    padding-top:8px;
-    border-top:1px dashed var(--line);
-    font-size:12.5px;
-    color:var(--ink-soft);
-    display:flex;
-    align-items:center;
-    gap:6px;
-  }
-  .link-row .stitch{
-    color:var(--clay);
-    font-weight:700;
-  }
-
-  .card-actions{
-    display:flex;
-    gap:6px;
-    flex-shrink:0;
-  }
-  .icon-btn{
-    width:32px;
-    height:32px;
-    border-radius:8px;
-    border:1px solid var(--line);
-    background:transparent;
-    color:var(--ink-soft);
-    font-size:15px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .icon-btn:active{background:var(--line);}
-  .icon-btn.danger{color:var(--clay-dark);border-color:#ecd3c8;}
-
-  .empty{
-    text-align:center;
-    padding:60px 20px;
-    color:var(--ink-soft);
-  }
-  .empty .glyph{
-    font-size:34px;
-    margin-bottom:10px;
-    opacity:.5;
-  }
-  .empty p{margin:4px 0;font-size:14px;}
-
-  /* modal / sheet */
-  .overlay{
-    position:fixed;
-    inset:0;
-    background:rgba(31,43,61,.4);
-    display:flex;
-    align-items:flex-end;
-    justify-content:center;
-    z-index:50;
-  }
-  .sheet{
-    background:var(--paper);
-    width:100%;
-    max-width:720px;
-    border-radius:18px 18px 0 0;
-    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
-    max-height:88vh;
-    overflow-y:auto;
-    box-shadow:0 -8px 30px rgba(0,0,0,.15);
-  }
-  .sheet-handle{
-    width:36px;
-    height:4px;
-    background:var(--line);
-    border-radius:3px;
-    margin:0 auto 16px;
-  }
-  .sheet h2{
-    font-size:19px;
-    margin:0 0 16px;
-  }
-  .field{margin-bottom:14px;}
-  .field label{
-    display:block;
-    font-size:13px;
-    font-weight:600;
-    color:var(--ink-soft);
-    margin-bottom:5px;
-  }
-  .field input[type=text],
-  .field input[type=date],
-  .field input[type=time],
-  .field input[type=url],
-  .field textarea,
-  .field select{
-    width:100%;
-    padding:10px 12px;
-    border:1px solid var(--line);
-    border-radius:8px;
-    background:var(--paper-raised);
-    font-size:15px;
-    color:var(--ink);
-  }
-  .field textarea{resize:vertical;min-height:80px;}
-  .field-row{display:flex;gap:10px;}
-  .field-row .field{flex:1;}
-
-  .chip-select{display:flex;gap:6px;flex-wrap:wrap;}
-  .chip{
-    padding:7px 13px;
-    border-radius:20px;
-    border:1px solid var(--line);
-    background:var(--paper-raised);
-    font-size:13.5px;
-    color:var(--ink-soft);
-  }
-  .chip.selected{
-    background:var(--ink);
-    color:#fff;
-    border-color:var(--ink);
-  }
-
-  .file-link-list{
-    border:1px solid var(--line);
-    border-radius:8px;
-    max-height:160px;
-    overflow-y:auto;
-  }
-  .file-link-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:9px 12px;
-    border-bottom:1px solid var(--line);
-    font-size:14px;
-  }
-  .file-link-row:last-child{border-bottom:none;}
-  .file-link-row input{margin:0;}
-
-  .sheet-actions{
-    display:flex;
-    gap:10px;
-    margin-top:18px;
-  }
-  .btn{
-    flex:1;
-    padding:12px;
-    border-radius:10px;
-    border:none;
-    font-size:15px;
-    font-weight:600;
-  }
-  .btn.primary{background:var(--ink);color:#fff;}
-  .btn.secondary{background:var(--line);color:var(--ink);}
-  .btn.danger{background:var(--clay);color:#fff;}
-  .btn:active{transform:scale(.98);}
-
-  .bottom-nav{
-    position:fixed;
-    bottom:0;
-    left:0;right:0;
-    background:var(--paper-raised);
-    border-top:1px solid var(--line);
-    display:flex;
-    padding:6px 8px calc(6px + env(safe-area-inset-bottom));
-    z-index:10;
-  }
-  .nav-item{
-    flex:1;
-    background:none;
-    border:none;
-    padding:8px 4px;
-    font-size:11.5px;
-    font-weight:600;
-    color:var(--ink-soft);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:3px;
-  }
-  .nav-item .glyph{font-size:19px;}
-  .nav-item.active{color:var(--clay);}
-
-  .draft-box{
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:12px;
-    background:var(--paper-raised);
-    font-size:14.5px;
-    line-height:1.5;
-    margin-bottom:10px;
-  }
-  .channel-row{display:flex;gap:8px;margin-bottom:12px;}
-  .channel-btn{
-    flex:1;
-    padding:10px;
-    border-radius:10px;
-    border:1.5px solid var(--line);
-    background:var(--paper-raised);
-    font-size:14px;
-    font-weight:600;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:6px;
-  }
-  .channel-btn.selected{border-color:var(--clay);color:var(--clay-dark);background:#fbf1ec;}
-
-  .toast{
-    position:fixed;
-    bottom:90px;
-    left:50%;
-    transform:translateX(-50%);
-    background:var(--ink);
-    color:#fff;
-    padding:10px 18px;
-    border-radius:30px;
-    font-size:13.5px;
-    z-index:100;
-    box-shadow:0 4px 14px rgba(0,0,0,.25);
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>אפליקציה קהילתית</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+        
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            margin-bottom: 12px;
+        }
+        
+        .card-blue {
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
+            color: white;
+        }
+        
+        .card-green {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+        
+        h1 { color: #1e40af; text-align: center; font-size: 22px; margin-bottom: 8px; }
+        h2 { color: #1e40af; font-size: 18px; margin-bottom: 10px; }
+        h3 { color: #374151; font-size: 16px; margin-bottom: 8px; }
+        
+        .community-name { color: #7c3aed; font-weight: bold; }
+        
+        p { color: #64748b; line-height: 1.5; margin-bottom: 10px; font-size: 14px; }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 11px;
+            margin-bottom: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            text-align: right;
+            font-family: inherit;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #7c3aed;
+        }
+        
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        
+        .btn-primary { background: linear-gradient(135deg, #3b82f6, #1e40af); color: white; }
+        .btn-purple { background: linear-gradient(135deg, #7c3aed, #5b21b6); color: white; }
+        .btn-green { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-orange { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .btn-red { background: #ef4444; color: white; }
+        .btn-gray { background: #e2e8f0; color: #374151; }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-admin { background: #fef3c7; color: #d97706; }
+        .badge-member { background: #ede9fe; color: #7c3aed; }
+        
+        .member-card {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-right: 3px solid #7c3aed;
+        }
+        
+        .message-card {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border-right: 3px solid #3b82f6;
+        }
+        
+        .message-card strong { color: #1e40af; display: block; margin-bottom: 4px; font-size: 14px; }
+        .message-card small { color: #94a3b8; font-size: 12px; }
+        
+        .forum-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        
+        .forum-card:active { opacity: 0.8; }
+        
+        .status-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-left: 5px;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: bold;
+        }
+        
+        .step-done { background: #10b981; color: white; }
+        .step-active { background: #7c3aed; color: white; }
+        .step-pending { background: #e2e8f0; color: #94a3b8; }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #64748b;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #7c3aed;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .error-msg { color: #ef4444; font-size: 13px; margin-bottom: 8px; text-align: center; }
+        .success-msg { color: #10b981; font-size: 13px; margin-bottom: 8px; text-align: center; }
+        
+        .divider { border: none; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+        
+        .nav-bottom {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            left: 0;
+            background: white;
+            display: flex;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .nav-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 11px;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+        }
+        
+        .nav-btn.active { color: #7c3aed; }
+        .nav-btn span { font-size: 20px; }
+        
+        .with-nav { padding-bottom: 75px; }
+        
+        .whatsapp-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            background: #25D366;
+            color: white;
+            padding: 13px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+    </style>
 </head>
 <body>
-<div id="root"></div>
+<div class="container">
 
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo, useCallback } = React;
+    <!-- ===== אשף הגדרה ===== -->
+    <div id="screen-setup" class="screen">
+        <div class="card" style="margin-top: 20px;">
+            <div style="text-align:center; font-size: 50px; margin-bottom: 15px;">🏘️</div>
+            <h1>ברוכים הבאים!</h1>
+            <p style="text-align:center;">הגדרה חד-פעמית לפני שמתחילים</p>
+        </div>
+        
+        <!-- שלב 1: פרטי קהילה -->
+        <div id="setup-step1" class="card">
+            <div class="step-indicator">
+                <div class="step step-active">1</div>
+                <div class="step step-pending">2</div>
+                <div class="step step-pending">3</div>
+            </div>
+            <h2>🏘️ פרטי הקהילה</h2>
+            <input type="text" id="setup-community-name" placeholder="שם הקהילה (לדוגמה: קהילת יואב)">
+            <select id="setup-community-type">
+                <option value="sharing">👥 שיתוף ידע - חברים שווים</option>
+                <option value="teaching">🎓 חונכות - מנטורים וחניכים</option>
+            </select>
+            <input type="text" id="setup-admin-name" placeholder="שמך (שם המנהל)">
+            <input type="password" id="setup-admin-password" placeholder="סיסמת מנהל (לפחות 6 תווים)">
+            <input type="password" id="setup-admin-password2" placeholder="אמת סיסמה">
+            <div id="step1-error" class="error-msg"></div>
+            <button class="btn-purple" onclick="setupStep2()">הבא ← </button>
+        </div>
+        
+        <!-- שלב 2: חיבור Google Sheets -->
+        <div id="setup-step2" class="card" style="display:none;">
+            <div class="step-indicator">
+                <div class="step step-done">✓</div>
+                <div class="step step-active">2</div>
+                <div class="step step-pending">3</div>
+            </div>
+            <h2>🔗 חיבור לנתונים</h2>
+            <p>כדי שכל חברי הקהילה יראו אחד את השני, צריך לחבר ל-Google Sheets.</p>
+            
+            <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:12px; font-size:13px; line-height:1.8;">
+                <strong>📋 הוראות קצרות:</strong><br>
+                1. פתחי <a href="https://script.google.com" target="_blank" style="color:#7c3aed;">script.google.com</a><br>
+                2. לחצי "New Project"<br>
+                3. מחקי הכל והדביקי את קוד ה-Apps Script<br>
+                4. לחצי Deploy → New deployment → Web App<br>
+                5. Who has access: <strong>Anyone</strong><br>
+                6. העתיקי את ה-URL לכאן ↓
+            </div>
+            
+            <input type="text" id="setup-sheets-url" placeholder="https://script.google.com/macros/s/...">
+            <div id="step2-error" class="error-msg"></div>
+            <button class="btn-purple" onclick="setupStep3()">בדיקה וחיבור 🔍</button>
+            <button class="btn-gray" onclick="showSetupStep(1)">← חזרה</button>
+        </div>
+        
+        <!-- שלב 3: סיום -->
+        <div id="setup-step3" class="card" style="display:none;">
+            <div class="step-indicator">
+                <div class="step step-done">✓</div>
+                <div class="step step-done">✓</div>
+                <div class="step step-active">3</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:60px; margin-bottom:10px;">🎉</div>
+                <h2>הכל מוכן!</h2>
+                <p>הקהילה שלך מוכנה לשימוש!</p>
+                <p style="color:#7c3aed; font-weight:bold;" id="setup-summary"></p>
+            </div>
+            <button class="btn-purple" onclick="finishSetup()">🚀 פתח את הקהילה!</button>
+        </div>
+    </div>
 
-// ---- CONFIG ----
-// כתובת ה-Apps Script Web App. יש להחליף לאחר הפריסה.
-const API_URL = "PASTE_YOUR_APPS_SCRIPT_URL_HERE";
+    <!-- ===== מסך כניסה ===== -->
+    <div id="screen-welcome" class="screen">
+        <div class="card" style="margin-top: 20px; text-align:center;">
+            <div style="font-size:50px; margin-bottom:10px;">🏘️</div>
+            <h1 id="welcome-title">ברוכים הבאים!</h1>
+            <p id="welcome-subtitle">פלטפורמת שיתוף הידע הקהילתית</p>
+        </div>
+        
+        <div class="card">
+            <input type="tel" id="login-phone" placeholder="מספר טלפון">
+            <div id="login-error" class="error-msg"></div>
+            <button class="btn-purple" onclick="login()">✨ כניסה</button>
+            <hr class="divider">
+            <button class="btn-green" onclick="showScreen('register')">📝 הרשמה כחבר חדש</button>
+            <button class="btn-gray" onclick="showScreen('about')">ℹ️ אודות</button>
+        </div>
+    </div>
 
-// ---- MOCK DATA (used until API_URL is connected) ----
-const MOCK_FILES = [
-  { id:"f1", name:"חוזה שכירות 2026.pdf", category:"חשוב", driveUrl:"#", addedAt:"2026-06-10" },
-  { id:"f2", name:"קבלה - ועד בית יוני.jpg", category:"כספים", driveUrl:"#", addedAt:"2026-06-18" },
-  { id:"f3", name:"תוצאות בדיקה.pdf", category:"בריאות", driveUrl:"#", addedAt:"2026-06-20" },
-];
-const MOCK_TASKS = [
-  { id:"t1", title:"לשלוח אישור קבלה לחוזה לעו\"ד", notes:"לאשר שקראתי את הסעיף המתוקן", due:"2026-06-28", fileIds:["f1"], done:false },
-  { id:"t2", title:"לעקוב אחרי תשובת קופת החולים", notes:"", due:"2026-06-27", fileIds:["f3"], done:false },
-  { id:"t3", title:"לארכב קבלות יוני", notes:"", due:"2026-06-30", fileIds:["f2"], done:false },
-];
+    <!-- ===== מסך הרשמה ===== -->
+    <div id="screen-register" class="screen">
+        <div class="card">
+            <h1>📝 הרשמה לקהילה</h1>
+            <input type="text" id="reg-firstname" placeholder="שם פרטי *">
+            <input type="text" id="reg-lastname" placeholder="שם משפחה *">
+            <input type="text" id="reg-location" placeholder="יישוב *">
+            <input type="tel" id="reg-phone" placeholder="טלפון *">
+            <textarea id="reg-bio" rows="2" placeholder="ספר/י על עצמך, תחומי עניין..."></textarea>
+            <div id="reg-role-container">
+                <select id="reg-role">
+                    <option value="member">👥 חבר קהילה</option>
+                    <option value="mentor">👔 מנטור</option>
+                    <option value="mentee">📚 חניך</option>
+                </select>
+            </div>
+            <div id="reg-error" class="error-msg"></div>
+            <button class="btn-green" onclick="register()">✅ הרשמה</button>
+            <button class="btn-gray" onclick="showScreen('welcome')">← חזרה</button>
+        </div>
+    </div>
 
-function todayStr(){
-  const d = new Date();
-  return d.toISOString().slice(0,10);
-}
+    <!-- ===== מסך ראשי ===== -->
+    <div id="screen-main" class="screen with-nav">
+        <div class="card card-purple" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+            <p style="color:rgba(255,255,255,0.8); margin:0; font-size:13px;">ברוך/ה הבא/ה,</p>
+            <h2 style="color:white; margin:3px 0;" id="main-username"></h2>
+            <span id="main-role-badge" class="badge" style="background:rgba(255,255,255,0.2); color:white;"></span>
+        </div>
+        
+        <div class="card">
+            <h3>📌 לוח הקהילה</h3>
+            <div id="main-latest-messages">
+                <div class="loading"><div class="spinner"></div>טוען...</div>
+            </div>
+        </div>
+        
+        <!-- כפתור וואטסאפ -->
+        <div class="card">
+            <a href="https://wa.me/972506221490" target="_blank" class="whatsapp-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24" height="24">
+                    <path fill="white" d="M24 4C12.95 4 4 12.95 4 24c0 3.44.91 6.67 2.5 9.45L4 44l10.83-2.45C17.37 43.1 20.6 44 24 44c11.05 0 20-8.95 20-20S35.05 4 24 4zm10.24 27.6c-.42 1.18-2.48 2.27-3.42 2.35-.93.09-1.8.42-6.06-1.26-5.14-2.01-8.4-7.25-8.66-7.59-.25-.33-2.1-2.8-2.1-5.35s1.32-3.78 1.85-4.31c.42-.42.93-.5 1.26-.5h.93c.33 0 .67.08 1.01.92l1.68 4.03c.17.42.09.84-.08 1.18l-.5.76c-.17.25-.34.5-.17.84.67 1.26 1.76 2.6 2.86 3.53 1.26 1.09 2.6 1.77 2.94 1.93.34.17.59.08.84-.17l1.26-1.43c.25-.33.59-.42 1.01-.25l3.86 1.85c.42.17.67.33.75.58.09.93-.25 2.1-.67 3.29z"/>
+                </svg>
+                להצעת נושאים נוספים
+            </a>
+        </div>
+    </div>
 
-function fmtDate(iso){
-  if(!iso) return "";
-  const [y,m,d] = iso.split("-");
-  return `${d}.${m}`;
-}
+    <!-- ===== מסך חיפוש ===== -->
+    <div id="screen-search" class="screen with-nav">
+        <div class="card">
+            <h1>🔍 חברי הקהילה</h1>
+            <input type="text" id="search-query" placeholder="חפש לפי שם, יישוב..." oninput="searchMembers()">
+            <select id="search-role-filter" onchange="searchMembers()">
+                <option value="all">כולם</option>
+                <option value="member">חברי קהילה</option>
+                <option value="mentor">מנטורים</option>
+                <option value="mentee">חניכים</option>
+            </select>
+        </div>
+        <div id="search-results">
+            <div class="loading"><div class="spinner"></div>טוען חברים...</div>
+        </div>
+    </div>
 
-function dueState(iso, done){
-  if(done) return "done";
-  if(!iso) return "";
-  const today = todayStr();
-  if(iso < today) return "overdue";
-  if(iso === today) return "due-today";
-  return "";
-}
+    <!-- ===== מסך פורומים ===== -->
+    <div id="screen-forums" class="screen with-nav">
+        <div class="card">
+            <h1>💬 פורומים</h1>
+        </div>
+        
+        <!-- פורום כללי קבוע -->
+        <div class="forum-card" onclick="openForum('general', '📌 פורום כללי', 'פורום פתוח לכל חברי הקהילה')">
+            <h3>📌 פורום כללי</h3>
+            <p style="margin:0; font-size:13px;">פורום פתוח לכל חברי הקהילה</p>
+        </div>
+        
+        <!-- פורומים נוספים -->
+        <div id="extra-forums"></div>
+        
+        <!-- כפתור פורום חדש -->
+        <div class="card">
+            <button class="btn-green" onclick="showScreen('new-forum')">➕ פתח פורום חדש</button>
+        </div>
+    </div>
 
-function dueLabel(iso, done){
-  if(done) return "בוצע";
-  const state = dueState(iso, done);
-  if(state==="overdue") return "באיחור";
-  if(state==="due-today") return "היום";
-  return fmtDate(iso);
-}
+    <!-- ===== פתיחת פורום חדש ===== -->
+    <div id="screen-new-forum" class="screen">
+        <div class="card">
+            <h1>➕ פורום חדש</h1>
+            <input type="text" id="new-forum-title" placeholder="שם הפורום *">
+            <textarea id="new-forum-desc" rows="2" placeholder="תיאור קצר..."></textarea>
+            <div id="new-forum-error" class="error-msg"></div>
+            <button class="btn-green" onclick="createForum()">✅ צור פורום</button>
+            <button class="btn-gray" onclick="showScreen('forums')">← חזרה</button>
+        </div>
+    </div>
 
-// ---------- API layer ----------
-// כל הקריאות עוברות דרך Apps Script. אם אין חיבור עדיין - עובדים על נתוני דמו.
-const api = {
-  connected: API_URL && API_URL.indexOf("PASTE_") === -1,
-  async getAll(){
-    if(!api.connected) return { files: MOCK_FILES, tasks: MOCK_TASKS };
-    const res = await fetch(`${API_URL}?action=getAll`);
-    return res.json();
-  },
-  async saveFile(file){
-    if(!api.connected) return file;
-    const res = await fetch(API_URL, {
-      method:"POST",
-      body: JSON.stringify({ action:"saveFile", payload:file })
-    });
-    return res.json();
-  },
-  async saveTask(task){
-    if(!api.connected) return task;
-    const res = await fetch(API_URL, {
-      method:"POST",
-      body: JSON.stringify({ action:"saveTask", payload:task })
-    });
-    return res.json();
-  },
-  async deleteItem(type, id){
-    if(!api.connected) return true;
-    const res = await fetch(API_URL, {
-      method:"POST",
-      body: JSON.stringify({ action:"delete", payload:{ type, id } })
-    });
-    return res.json();
-  },
-  async queueMessage(msg){
-    if(!api.connected) return msg;
-    const res = await fetch(API_URL, {
-      method:"POST",
-      body: JSON.stringify({ action:"queueMessage", payload: msg })
-    });
-    return res.json();
-  }
+    <!-- ===== מסך פורום ספציפי ===== -->
+    <div id="screen-forum-view" class="screen">
+        <div class="card">
+            <h2 id="forum-view-title"></h2>
+            <p id="forum-view-desc"></p>
+        </div>
+        
+        <div id="forum-messages">
+            <div class="loading"><div class="spinner"></div>טוען הודעות...</div>
+        </div>
+        
+        <div class="card">
+            <textarea id="new-message-text" rows="3" placeholder="כתוב הודעה..."></textarea>
+            <button class="btn-primary" onclick="postMessage()">📤 שלח</button>
+            <button class="btn-gray" onclick="showScreen('forums')">← חזרה לפורומים</button>
+        </div>
+    </div>
+
+    <!-- ===== מסך פרופיל ===== -->
+    <div id="screen-profile" class="screen with-nav">
+        <div class="card" style="text-align:center;">
+            <div style="font-size:60px; margin-bottom:10px;" id="profile-icon">👤</div>
+            <h2 id="profile-name"></h2>
+            <span id="profile-role-badge" class="badge badge-member"></span>
+        </div>
+        
+        <div class="card">
+            <p><strong>📍 יישוב:</strong> <span id="profile-location"></span></p>
+            <p><strong>📱 טלפון:</strong> <span id="profile-phone"></span></p>
+            <p><strong>💬 אודות:</strong> <span id="profile-bio"></span></p>
+        </div>
+        
+        <div class="card">
+            <button class="btn-red" onclick="logout()">← יציאה</button>
+        </div>
+    </div>
+    
+    <!-- ===== פאנל מנהל ===== -->
+    <div id="screen-admin" class="screen with-nav">
+        <div class="card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <h2 style="color:white;">⚙️ פאנל מנהל</h2>
+            <p style="color:rgba(255,255,255,0.9); margin:0;" id="admin-community-name"></p>
+        </div>
+        
+        <div class="card">
+            <h3>👥 ניהול חברים</h3>
+            <p id="admin-member-count" style="color:#7c3aed; font-weight:bold;"></p>
+            <div id="admin-members-list"></div>
+        </div>
+        
+        <div class="card">
+            <h3>⚙️ הגדרות קהילה</h3>
+            <button class="btn-orange" onclick="exportToExcel()">📊 ייצוא לאקסל</button>
+            <button class="btn-gray" onclick="showScreen('main')">← חזרה</button>
+        </div>
+    </div>
+
+    <!-- ===== מסך אודות ===== -->
+    <div id="screen-about" class="screen">
+        <div class="card">
+            <div style="font-size:50px; text-align:center; margin-bottom:10px;">🏘️</div>
+            <h1 id="about-title">אפליקציה קהילתית</h1>
+        </div>
+        <div class="card">
+            <h3>🎯 החזון</h3>
+            <p id="about-vision">פלטפורמה דיגיטלית לשיתוף ידע וחיזוק קשרים בין חברי הקהילה.</p>
+            <h3>🤝 איך זה עובד</h3>
+            <p>חברי הקהילה נרשמים, מוצאים אחד את השני, ומתקשרים דרך הפורומים.</p>
+            <h3>🔒 פרטיות</h3>
+            <p>המידע שלך מוצג רק לחברי הקהילה הרשומים.</p>
+        </div>
+        <div class="card">
+            <button class="btn-gray" onclick="showScreen('welcome')">← חזרה</button>
+        </div>
+    </div>
+
+    <!-- ===== תפריט ניווט תחתון ===== -->
+    <div class="nav-bottom" id="nav-bottom" style="display:none;">
+        <button class="nav-btn" id="nav-main" onclick="switchNav('main')">
+            <span>🏠</span>ראשי
+        </button>
+        <button class="nav-btn" id="nav-search" onclick="switchNav('search')">
+            <span>🔍</span>חברים
+        </button>
+        <button class="nav-btn" id="nav-forums" onclick="switchNav('forums')">
+            <span>💬</span>פורומים
+        </button>
+        <button class="nav-btn" id="nav-profile" onclick="switchNav('profile')">
+            <span>👤</span>פרופיל
+        </button>
+        <button class="nav-btn" id="nav-admin" onclick="switchNav('admin')" style="display:none;">
+            <span>⚙️</span>מנהל
+        </button>
+    </div>
+
+</div>
+
+<script>
+// ================================
+// נתונים גלובליים
+// ================================
+let config = null;
+let currentUser = null;
+let currentForum = null;
+let allMembers = [];
+let allForums = [];
+let adminPassword = null;
+
+// ================================
+// אתחול - טעינת הגדרות
+// ================================
+window.onload = function() {
+    const saved = localStorage.getItem('community_config');
+    if (saved) {
+        config = JSON.parse(saved);
+        adminPassword = config.adminPassword;
+        applyConfig();
+        
+        // בדיקה אם המשתמש מחובר
+        const savedUser = localStorage.getItem('current_user');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            enterApp();
+        } else {
+            showScreen('welcome');
+        }
+    } else {
+        showScreen('setup');
+    }
 };
 
-// ---------- small components ----------
-function Pill({children, kind}){
-  return <span className={`pill ${kind||""}`}>{children}</span>;
-}
-
-function Toast({message, onDone}){
-  useEffect(()=>{
-    const t = setTimeout(onDone, 2200);
-    return ()=>clearTimeout(t);
-  },[]);
-  return <div className="toast">{message}</div>;
-}
-
-function EmptyState({glyph, lines}){
-  return (
-    <div className="empty">
-      <div className="glyph">{glyph}</div>
-      {lines.map((l,i)=><p key={i}>{l}</p>)}
-    </div>
-  );
-}
-
-// ---------- File card ----------
-function FileCard({file, linkedTaskTitles, onOpen, onEdit, onDelete}){
-  return (
-    <div className={`card ${linkedTaskTitles.length ? "linked":""}`}>
-      <div className="card-top">
-        <div style={{minWidth:0}}>
-          <p className="card-title">{file.name}</p>
-          <div className="card-meta">
-            <Pill>{file.category||"לא מסווג"}</Pill>
-            <span>נוסף {fmtDate(file.addedAt)}</span>
-          </div>
-        </div>
-        <div className="card-actions">
-          <button className="icon-btn" onClick={()=>onOpen(file)} aria-label="פתח קובץ">⤴</button>
-          <button className="icon-btn" onClick={()=>onEdit(file)} aria-label="ערוך">✎</button>
-          <button className="icon-btn danger" onClick={()=>onDelete(file)} aria-label="מחק">🗑</button>
-        </div>
-      </div>
-      {linkedTaskTitles.length>0 &&
-        <div className="link-row">
-          <span className="stitch">⟆</span>
-          <span>מקושר ל: {linkedTaskTitles.join("• ")}</span>
-        </div>
-      }
-    </div>
-  );
-}
-
-// ---------- Task card ----------
-function TaskCard({task, linkedFileNames, onToggleDone, onEdit, onDelete, onCompose}){
-  const state = dueState(task.due, task.done);
-  return (
-    <div className={`card ${linkedFileNames.length ? "linked":""}`}>
-      <div className="card-top">
-        <div style={{minWidth:0, display:"flex", gap:10}}>
-          <button
-            className="icon-btn"
-            style={{borderRadius:"50%", flexShrink:0, marginTop:1}}
-            onClick={()=>onToggleDone(task)}
-            aria-label="סמן כבוצע"
-          >{task.done ? "✓" : ""}</button>
-          <div>
-            <p className="card-title" style={task.done?{textDecoration:"line-through", color:"var(--ink-soft)"}:{}}>{task.title}</p>
-            <div className="card-meta">
-              <Pill kind={state}>{dueLabel(task.due, task.done)}</Pill>
-              {task.notes && <span>{task.notes}</span>}
-            </div>
-          </div>
-        </div>
-        <div className="card-actions">
-          <button className="icon-btn" onClick={()=>onCompose(task)} aria-label="כתוב הודעה">✉</button>
-          <button className="icon-btn" onClick={()=>onEdit(task)} aria-label="ערוך">✎</button>
-          <button className="icon-btn danger" onClick={()=>onDelete(task)} aria-label="מחק">🗑</button>
-        </div>
-      </div>
-      {linkedFileNames.length>0 &&
-        <div className="link-row">
-          <span className="stitch">⟆</span>
-          <span>קבצים: {linkedFileNames.join("• ")}</span>
-        </div>
-      }
-    </div>
-  );
-}
-
-// ---------- File edit sheet ----------
-function FileSheet({file, onSave, onClose}){
-  const [name, setName] = useState(file?.name || "");
-  const [category, setCategory] = useState(file?.category || "");
-  const [driveUrl, setDriveUrl] = useState(file?.driveUrl || "");
-  const categories = ["חשוב","כספים","בריאות","משפחה","עבודה","לא מסווג"];
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="sheet" onClick={e=>e.stopPropagation()}>
-        <div className="sheet-handle"/>
-        <h2>{file ? "ערוך קובץ" : "קובץ חדש"}</h2>
-        <div className="field">
-          <label>שם הקובץ</label>
-          <input type="text" value={name} onChange={e=>setName(e.target.value)} placeholder="לדוגמה: חוזה שכירות.pdf" />
-        </div>
-        <div className="field">
-          <label>קישור ל-Google Drive</label>
-          <input type="url" value={driveUrl} onChange={e=>setDriveUrl(e.target.value)} placeholder="הדבק כאן קישור לקובץ ב-Drive" />
-        </div>
-        <div className="field">
-          <label>קטגוריה</label>
-          <div className="chip-select">
-            {categories.map(c=>(
-              <button key={c} className={`chip ${category===c?"selected":""}`} onClick={()=>setCategory(c)}>{c}</button>
-            ))}
-          </div>
-        </div>
-        <div className="sheet-actions">
-          <button className="btn secondary" onClick={onClose}>ביטול</button>
-          <button className="btn primary" onClick={()=>{
-            if(!name.trim()) return;
-            onSave({
-              id: file?.id || ("f"+Date.now()),
-              name: name.trim(),
-              category,
-              driveUrl,
-              addedAt: file?.addedAt || todayStr()
-            });
-          }}>שמירה</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Task edit sheet ----------
-function TaskSheet({task, files, onSave, onClose}){
-  const [title, setTitle] = useState(task?.title || "");
-  const [notes, setNotes] = useState(task?.notes || "");
-  const [due, setDue] = useState(task?.due || todayStr());
-  const [fileIds, setFileIds] = useState(task?.fileIds || []);
-
-  const toggleFile = (id) => {
-    setFileIds(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id]);
-  };
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="sheet" onClick={e=>e.stopPropagation()}>
-        <div className="sheet-handle"/>
-        <h2>{task ? "ערוך משימה" : "משימה חדשה"}</h2>
-        <div className="field">
-          <label>כותרת המשימה</label>
-          <input type="text" value={title} onChange={e=>setTitle(e.target.value)} placeholder="מה צריך לעשות?" />
-        </div>
-        <div className="field">
-          <label>תאריך לביצוע / תזכורת</label>
-          <input type="date" value={due} onChange={e=>setDue(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>הערות</label>
-          <textarea value={notes} onChange={e=>setNotes(e.target.value)} placeholder="פרטים נוספים (לא חובה)" />
-        </div>
-        <div className="field">
-          <label>קישור לקבצים</label>
-          <div className="file-link-list">
-            {files.length===0 && <div style={{padding:12, fontSize:13, color:"var(--ink-soft)"}}>אין קבצים עדיין</div>}
-            {files.map(f=>(
-              <label key={f.id} className="file-link-row">
-                <input type="checkbox" checked={fileIds.includes(f.id)} onChange={()=>toggleFile(f.id)} />
-                <span>{f.name}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        <div className="sheet-actions">
-          <button className="btn secondary" onClick={onClose}>ביטול</button>
-          <button className="btn primary" onClick={()=>{
-            if(!title.trim()) return;
-            onSave({
-              id: task?.id || ("t"+Date.now()),
-              title: title.trim(),
-              notes,
-              due,
-              fileIds,
-              done: task?.done || false
-            });
-          }}>שמירה</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Compose message sheet ----------
-function ComposeSheet({task, linkedFiles, onClose, onQueue, onSendNow}){
-  const draftFor = (channel) => {
-    const fileList = linkedFiles.map(f=>f.name).join(", ");
-    const base = `שלום,\n\nבנוגע ל"${task.title}"${fileList ? ` (קובץ: ${fileList})`:""}.\n\n`;
-    return base;
-  };
-
-  const [channel, setChannel] = useState("email");
-  const [text, setText] = useState(draftFor("email"));
-  const [scheduleDate, setScheduleDate] = useState(task.due || todayStr());
-  const [scheduleTime, setScheduleTime] = useState("09:00");
-  const [recipient, setRecipient] = useState("");
-  const [mode, setMode] = useState("schedule"); // schedule | now
-
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="sheet" onClick={e=>e.stopPropagation()}>
-        <div className="sheet-handle"/>
-        <h2>כתיבת הודעה</h2>
-
-        <div className="channel-row">
-          <button className={`channel-btn ${channel==="email"?"selected":""}`} onClick={()=>setChannel("email")}>✉ אימייל</button>
-          <button className={`channel-btn ${channel==="whatsapp"?"selected":""}`} onClick={()=>setChannel("whatsapp")}>💬 וואטסאפ</button>
-        </div>
-
-        <div className="field">
-          <label>{channel==="email" ? "אימייל הנמען" : "מספר טלפון (כולל קידומת מדינה, לדוגמה 972501234567)"}</label>
-          <input type="text" value={recipient} onChange={e=>setRecipient(e.target.value)} placeholder={channel==="email" ? "name@example.com" : "972501234567"} />
-        </div>
-
-        <div className="field">
-          <label>תוכן ההודעה (ניתן לעריכה)</label>
-          <textarea value={text} onChange={e=>setText(e.target.value)} style={{minHeight:120}} />
-        </div>
-
-        {channel==="email" && (
-          <>
-            <div className="field" style={{marginBottom:6}}>
-              <label>מצב שליחה</label>
-              <div className="chip-select">
-                <button className={`chip ${mode==="schedule"?"selected":""}`} onClick={()=>setMode("schedule")}>תזמון לשליחה</button>
-                <button className={`chip ${mode==="now"?"selected":""}`} onClick={()=>setMode("now")}>אישור ושליחה כעת</button>
-              </div>
-            </div>
-            {mode==="schedule" && (
-              <div className="field-row">
-                <div className="field">
-                  <label>תאריך שליחה</label>
-                  <input type="date" value={scheduleDate} onChange={e=>setScheduleDate(e.target.value)} />
-                </div>
-                <div className="field">
-                  <label>שעה</label>
-                  <input type="time" value={scheduleTime} onChange={e=>setScheduleTime(e.target.value)} />
-                </div>
-              </div>
-            )}
-          </>
-        )}
-
-        {channel==="whatsapp" && (
-          <div className="draft-box" style={{background:"#fbf1ec", borderColor:"#ecd3c8"}}>
-            לוואטסאפ אין שליחה אוטומטית. בלחיצה על "פתח בוואטסאפ" ההודעה תיפתח מוכנה בטלפון שלך — לחיצת "שלח" אחת ותסיים.
-          </div>
-        )}
-
-        <div className="sheet-actions">
-          <button className="btn secondary" onClick={onClose}>ביטול</button>
-          {channel==="whatsapp" ? (
-            <button className="btn primary" onClick={()=>{
-              const url = `https://wa.me/${recipient.replace(/\D/g,"")}?text=${encodeURIComponent(text)}`;
-              window.open(url, "_blank");
-              onSendNow({channel, recipient, text, taskId:task.id});
-            }}>פתח בוואטסאפ</button>
-          ) : mode==="now" ? (
-            <button className="btn primary" onClick={()=>onSendNow({channel, recipient, text, taskId:task.id})}>שלח כעת</button>
-          ) : (
-            <button className="btn primary" onClick={()=>onQueue({
-              channel, recipient, text, taskId:task.id,
-              sendAt: `${scheduleDate}T${scheduleTime}`
-            })}>תזמן שליחה</button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Confirm delete ----------
-function ConfirmDelete({label, onConfirm, onClose}){
-  return (
-    <div className="overlay" onClick={onClose}>
-      <div className="sheet" onClick={e=>e.stopPropagation()} style={{maxWidth:420}}>
-        <div className="sheet-handle"/>
-        <h2>מחיקה</h2>
-        <p style={{fontSize:14.5, color:"var(--ink-soft)", marginTop:0}}>למחוק את "{label}"? לא ניתן לשחזר.</p>
-        <div className="sheet-actions">
-          <button className="btn secondary" onClick={onClose}>ביטול</button>
-          <button className="btn danger" onClick={onConfirm}>מחיקה</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Main App ----------
-function App(){
-  const [tab, setTab] = useState("today"); // today | files | tasks
-  const [files, setFiles] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
-  const [toast, setToast] = useState(null);
-
-  const [editingFile, setEditingFile] = useState(null);
-  const [showFileSheet, setShowFileSheet] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [showTaskSheet, setShowTaskSheet] = useState(false);
-  const [composeTask, setComposeTask] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null); // {type, item}
-
-  useEffect(()=>{
-    api.getAll().then(data=>{
-      setFiles(data.files||[]);
-      setTasks(data.tasks||[]);
-      setLoading(false);
-    });
-  },[]);
-
-  const fileNameById = useMemo(()=>{
-    const m = {};
-    files.forEach(f=>m[f.id]=f.name);
-    return m;
-  },[files]);
-
-  const taskTitleById = useMemo(()=>{
-    const m = {};
-    tasks.forEach(t=>m[t.id]=t.title);
-    return m;
-  },[tasks]);
-
-  const linkedTasksForFile = useCallback((fileId)=>{
-    return tasks.filter(t=>t.fileIds?.includes(fileId)).map(t=>t.title);
-  },[tasks]);
-
-  const linkedFilesForTask = useCallback((task)=>{
-    return (task.fileIds||[]).map(id=>fileNameById[id]).filter(Boolean);
-  },[fileNameById]);
-
-  const filteredFiles = useMemo(()=>{
-    if(!query.trim()) return files;
-    const q = query.trim().toLowerCase();
-    return files.filter(f => f.name.toLowerCase().includes(q) || (f.category||"").toLowerCase().includes(q));
-  },[files, query]);
-
-  const filteredTasks = useMemo(()=>{
-    if(!query.trim()) return tasks;
-    const q = query.trim().toLowerCase();
-    return tasks.filter(t => t.title.toLowerCase().includes(q) || (t.notes||"").toLowerCase().includes(q));
-  },[tasks, query]);
-
-  const todayTasks = useMemo(()=>{
-    const today = todayStr();
-    return tasks
-      .filter(t=>!t.done && t.due && t.due <= today)
-      .sort((a,b)=> a.due.localeCompare(b.due));
-  },[tasks]);
-
-  // ----- handlers -----
-  const saveFile = async (file) => {
-    setFiles(prev=>{
-      const exists = prev.some(f=>f.id===file.id);
-      return exists ? prev.map(f=>f.id===file.id?file:f) : [file, ...prev];
-    });
-    setShowFileSheet(false);
-    setEditingFile(null);
-    setToast("הקובץ נשמר");
-    await api.saveFile(file);
-  };
-
-  const saveTask = async (task) => {
-    setTasks(prev=>{
-      const exists = prev.some(t=>t.id===task.id);
-      return exists ? prev.map(t=>t.id===task.id?task:t) : [task, ...prev];
-    });
-    setShowTaskSheet(false);
-    setEditingTask(null);
-    setToast("המשימה נשמרה");
-    await api.saveTask(task);
-  };
-
-  const toggleDone = async (task) => {
-    const updated = {...task, done: !task.done};
-    setTasks(prev=>prev.map(t=>t.id===task.id?updated:t));
-    await api.saveTask(updated);
-  };
-
-  const confirmDelete = async () => {
-    const {type, item} = deleteTarget;
-    if(type==="file"){
-      setFiles(prev=>prev.filter(f=>f.id!==item.id));
+function applyConfig() {
+    if (!config) return;
+    
+    // עדכון שמות לפי סוג הקהילה
+    document.getElementById('welcome-title').textContent = config.communityName;
+    
+    if (config.communityType === 'teaching') {
+        document.getElementById('welcome-subtitle').textContent = 'פלטפורמת חונכות ולמידה';
+        document.getElementById('reg-role-container').innerHTML = `
+            <select id="reg-role">
+                <option value="mentor">👔 מנטור</option>
+                <option value="mentee">📚 חניך</option>
+            </select>
+        `;
     } else {
-      setTasks(prev=>prev.filter(t=>t.id!==item.id));
+        document.getElementById('welcome-subtitle').textContent = 'פלטפורמת שיתוף הידע הקהילתית';
+        document.getElementById('reg-role-container').innerHTML = `
+            <select id="reg-role">
+                <option value="member">👥 חבר קהילה</option>
+            </select>
+        `;
+        // הסתרת פילטר תפקיד בחיפוש
+        const roleFilter = document.getElementById('search-role-filter');
+        if (roleFilter) roleFilter.style.display = 'none';
     }
-    setDeleteTarget(null);
-    setToast("נמחק");
-    await api.deleteItem(type, item.id);
-  };
-
-  const openFile = (file) => {
-    if(file.driveUrl && file.driveUrl !== "#") window.open(file.driveUrl, "_blank");
-  };
-
-  const handleQueueMessage = async (msg) => {
-    setComposeTask(null);
-    setToast("ההודעה תוזמנה לשליחה");
-    await api.queueMessage(msg);
-  };
-
-  const handleSendNow = async (msg) => {
-    setComposeTask(null);
-    setToast(msg.channel==="whatsapp" ? "נפתח בוואטסאפ" : "ההודעה נשלחה");
-    await api.queueMessage({...msg, sendAt: new Date().toISOString(), sendImmediately:true});
-  };
-
-  const tabCounts = {
-    today: todayTasks.length,
-    files: files.length,
-    tasks: tasks.filter(t=>!t.done).length
-  };
-
-  return (
-    <div className="app">
-      <div className="header">
-        <h1 className="serif">FileTask</h1>
-        <p className="sub">{api.connected ? "מחובר ל-Google Sheets" : "מצב תצוגה מקדימה — לא מחובר עדיין"}</p>
-      </div>
-
-      <div className="tabs">
-        <button className={`tab ${tab==="today"?"active":""}`} onClick={()=>setTab("today")}>
-          <span className="count">{tabCounts.today}</span>היום
-        </button>
-        <button className={`tab ${tab==="files"?"active":""}`} onClick={()=>setTab("files")}>
-          <span className="count">{tabCounts.files}</span>קבצים
-        </button>
-        <button className={`tab ${tab==="tasks"?"active":""}`} onClick={()=>setTab("tasks")}>
-          <span className="count">{tabCounts.tasks}</span>משימות
-        </button>
-      </div>
-
-      {tab !== "today" && (
-        <div className="search-row">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder={tab==="files" ? "חיפוש קובץ לפי שם או קטגוריה..." : "חיפוש משימה..."}
-              value={query}
-              onChange={e=>setQuery(e.target.value)}
-            />
-          </div>
-          <button className="fab" onClick={()=> tab==="files" ? setShowFileSheet(true) : setShowTaskSheet(true)} aria-label="הוסף">+</button>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="empty"><div className="glyph">⟳</div><p>טוען...</p></div>
-      ) : (
-        <>
-          {tab==="today" && (
-            todayTasks.length===0 ? (
-              <EmptyState glyph="☼" lines={["אין משימות שדורשות תשומת לב היום.", "כל הכבוד!"]} />
-            ) : (
-              todayTasks.map(t=>(
-                <TaskCard
-                  key={t.id}
-                  task={t}
-                  linkedFileNames={linkedFilesForTask(t)}
-                  onToggleDone={toggleDone}
-                  onEdit={(t)=>{setEditingTask(t); setShowTaskSheet(true);}}
-                  onDelete={(t)=>setDeleteTarget({type:"task", item:t})}
-                  onCompose={(t)=>setComposeTask(t)}
-                />
-              ))
-            )
-          )}
-
-          {tab==="files" && (
-            filteredFiles.length===0 ? (
-              <EmptyState glyph="🗂" lines={["אין קבצים עדיין.", "הוסיפי קובץ עם הכפתור +"]} />
-            ) : (
-              filteredFiles.map(f=>(
-                <FileCard
-                  key={f.id}
-                  file={f}
-                  linkedTaskTitles={linkedTasksForFile(f.id)}
-                  onOpen={openFile}
-                  onEdit={(f)=>{setEditingFile(f); setShowFileSheet(true);}}
-                  onDelete={(f)=>setDeleteTarget({type:"file", item:f})}
-                />
-              ))
-            )
-          )}
-
-          {tab==="tasks" && (
-            filteredTasks.length===0 ? (
-              <EmptyState glyph="✓" lines={["אין משימות עדיין.", "הוסיפי משימה עם הכפתור +"]} />
-            ) : (
-              filteredTasks
-                .slice()
-                .sort((a,b)=>(a.done - b.done) || (a.due||"").localeCompare(b.due||""))
-                .map(t=>(
-                  <TaskCard
-                    key={t.id}
-                    task={t}
-                    linkedFileNames={linkedFilesForTask(t)}
-                    onToggleDone={toggleDone}
-                    onEdit={(t)=>{setEditingTask(t); setShowTaskSheet(true);}}
-                    onDelete={(t)=>setDeleteTarget({type:"task", item:t})}
-                    onCompose={(t)=>setComposeTask(t)}
-                  />
-                ))
-            )
-          )}
-        </>
-      )}
-
-      <div className="bottom-nav">
-        <button className={`nav-item ${tab==="today"?"active":""}`} onClick={()=>setTab("today")}>
-          <span className="glyph">☼</span>היום
-        </button>
-        <button className={`nav-item ${tab==="files"?"active":""}`} onClick={()=>setTab("files")}>
-          <span className="glyph">🗂</span>קבצים
-        </button>
-        <button className={`nav-item ${tab==="tasks"?"active":""}`} onClick={()=>setTab("tasks")}>
-          <span className="glyph">✓</span>משימות
-        </button>
-      </div>
-
-      {showFileSheet && (
-        <FileSheet
-          file={editingFile}
-          onSave={saveFile}
-          onClose={()=>{setShowFileSheet(false); setEditingFile(null);}}
-        />
-      )}
-
-      {showTaskSheet && (
-        <TaskSheet
-          task={editingTask}
-          files={files}
-          onSave={saveTask}
-          onClose={()=>{setShowTaskSheet(false); setEditingTask(null);}}
-        />
-      )}
-
-      {composeTask && (
-        <ComposeSheet
-          task={composeTask}
-          linkedFiles={files.filter(f=>composeTask.fileIds?.includes(f.id))}
-          onClose={()=>setComposeTask(null)}
-          onQueue={handleQueueMessage}
-          onSendNow={handleSendNow}
-        />
-      )}
-
-      {deleteTarget && (
-        <ConfirmDelete
-          label={deleteTarget.type==="file" ? deleteTarget.item.name : deleteTarget.item.title}
-          onConfirm={confirmDelete}
-          onClose={()=>setDeleteTarget(null)}
-        />
-      )}
-
-      {toast && <Toast message={toast} onDone={()=>setToast(null)} />}
-    </div>
-  );
+    
+    document.getElementById('about-title').textContent = config.communityName;
+    document.getElementById('admin-community-name').textContent = config.communityName;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+// ================================
+// אשף הגדרה
+// ================================
+function showSetupStep(step) {
+    document.getElementById('setup-step1').style.display = step === 1 ? 'block' : 'none';
+    document.getElementById('setup-step2').style.display = step === 2 ? 'block' : 'none';
+    document.getElementById('setup-step3').style.display = step === 3 ? 'block' : 'none';
+}
+
+function setupStep2() {
+    const name = document.getElementById('setup-community-name').value.trim();
+    const adminName = document.getElementById('setup-admin-name').value.trim();
+    const pass = document.getElementById('setup-admin-password').value;
+    const pass2 = document.getElementById('setup-admin-password2').value;
+    
+    if (!name || !adminName) {
+        document.getElementById('step1-error').textContent = 'אנא מלא את כל השדות';
+        return;
+    }
+    if (pass.length < 6) {
+        document.getElementById('step1-error').textContent = 'הסיסמה חייבת להיות לפחות 6 תווים';
+        return;
+    }
+    if (pass !== pass2) {
+        document.getElementById('step1-error').textContent = 'הסיסמאות לא תואמות';
+        return;
+    }
+    
+    config = {
+        communityName: name,
+        communityType: document.getElementById('setup-community-type').value,
+        adminName: adminName,
+        adminPassword: pass,
+        sheetsURL: ''
+    };
+    
+    showSetupStep(2);
+}
+
+function setupStep3() {
+    const url = document.getElementById('setup-sheets-url').value.trim();
+    
+    if (!url || !url.includes('script.google.com')) {
+        document.getElementById('step2-error').textContent = 'אנא הכנס כתובת Google Apps Script תקינה';
+        return;
+    }
+    
+    document.getElementById('step2-error').textContent = 'בודק חיבור...';
+    
+    fetch(url + '?action=ping')
+        .then(r => r.json())
+        .then(data => {
+            config.sheetsURL = url;
+            document.getElementById('step2-error').textContent = '';
+            document.getElementById('setup-summary').textContent = 
+                `קהילת "${config.communityName}" מוכנה! 🎉`;
+            showSetupStep(3);
+        })
+        .catch(() => {
+            // גם אם לא ניתן לבדוק, ממשיכים
+            config.sheetsURL = url;
+            document.getElementById('setup-summary').textContent = 
+                `קהילת "${config.communityName}" מוכנה! 🎉`;
+            showSetupStep(3);
+        });
+}
+
+function finishSetup() {
+    adminPassword = config.adminPassword;
+    localStorage.setItem('community_config', JSON.stringify(config));
+    applyConfig();
+    showScreen('welcome');
+}
+
+// ================================
+// כניסה והרשמה
+// ================================
+function login() {
+    const phone = document.getElementById('login-phone').value.trim();
+    if (!phone) {
+        document.getElementById('login-error').textContent = 'אנא הכנס מספר טלפון';
+        return;
+    }
+    
+    document.getElementById('login-error').textContent = 'מתחבר...';
+    
+    fetch(config.sheetsURL + '?action=login&phone=' + encodeURIComponent(phone))
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                currentUser = data.user;
+                localStorage.setItem('current_user', JSON.stringify(currentUser));
+                document.getElementById('login-error').textContent = '';
+                enterApp();
+            } else {
+                document.getElementById('login-error').textContent = 'מספר לא נמצא. אנא הירשם.';
+            }
+        })
+        .catch(() => {
+            document.getElementById('login-error').textContent = 'שגיאת חיבור. בדקי אינטרנט.';
+        });
+}
+
+function register() {
+    const firstName = document.getElementById('reg-firstname').value.trim();
+    const lastName = document.getElementById('reg-lastname').value.trim();
+    const location = document.getElementById('reg-location').value.trim();
+    const phone = document.getElementById('reg-phone').value.trim();
+    const bio = document.getElementById('reg-bio').value.trim();
+    const role = document.getElementById('reg-role').value;
+    
+    if (!firstName || !lastName || !location || !phone) {
+        document.getElementById('reg-error').textContent = 'אנא מלא את כל השדות המסומנים';
+        return;
+    }
+    
+    document.getElementById('reg-error').textContent = 'נרשם...';
+    
+    const userData = { firstName, lastName, location, phone, bio, role, action: 'register' };
+    
+    fetch(config.sheetsURL, {
+        method: 'POST',
+        body: JSON.stringify(userData)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            currentUser = data.user;
+            localStorage.setItem('current_user', JSON.stringify(currentUser));
+            document.getElementById('reg-error').textContent = '';
+            enterApp();
+        } else {
+            document.getElementById('reg-error').textContent = data.error || 'שגיאה בהרשמה';
+        }
+    })
+    .catch(() => {
+        document.getElementById('reg-error').textContent = 'שגיאת חיבור. בדקי אינטרנט.';
+    });
+}
+
+// ================================
+// כניסה לאפליקציה
+// ================================
+function enterApp() {
+    // עדכון פרופיל
+    document.getElementById('main-username').textContent = currentUser.firstName + ' ' + currentUser.lastName;
+    document.getElementById('main-role-badge').textContent = getRoleLabel(currentUser.role);
+    
+    document.getElementById('profile-name').textContent = currentUser.firstName + ' ' + currentUser.lastName;
+    document.getElementById('profile-location').textContent = currentUser.location;
+    document.getElementById('profile-phone').textContent = currentUser.phone;
+    document.getElementById('profile-bio').textContent = currentUser.bio || 'לא צוין';
+    document.getElementById('profile-role-badge').textContent = getRoleLabel(currentUser.role);
+    document.getElementById('profile-icon').textContent = getRoleIcon(currentUser.role);
+    
+    // הצגת כפתור מנהל אם צריך
+    const isAdmin = currentUser.role === 'admin' || currentUser.phone === getAdminPhone();
+    if (isAdmin) {
+        document.getElementById('nav-admin').style.display = 'flex';
+    }
+    
+    // הצגת תפריט
+    document.getElementById('nav-bottom').style.display = 'flex';
+    
+    switchNav('main');
+    loadLatestMessages();
+    loadForums();
+}
+
+function getAdminPhone() {
+    return config ? config.adminPhone || '' : '';
+}
+
+function getRoleLabel(role) {
+    const labels = {
+        member: '👥 חבר קהילה',
+        mentor: '👔 מנטור',
+        mentee: '📚 חניך',
+        admin: '⚙️ מנהל'
+    };
+    return labels[role] || '👥 חבר';
+}
+
+function getRoleIcon(role) {
+    const icons = {
+        member: '👥', mentor: '👔', mentee: '📚', admin: '⚙️'
+    };
+    return icons[role] || '👤';
+}
+
+// ================================
+// ניווט
+// ================================
+function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+}
+
+function switchNav(tab) {
+    showScreen(tab);
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.getElementById('nav-' + tab);
+    if (btn) btn.classList.add('active');
+    
+    if (tab === 'search') loadMembers();
+    if (tab === 'admin') loadAdminPanel();
+}
+
+// ================================
+// טעינת נתונים
+// ================================
+function loadLatestMessages() {
+    fetch(config.sheetsURL + '?action=getMessages&forumType=general&limit=5')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('main-latest-messages');
+            if (!data.messages || data.messages.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#94a3b8;">עדיין אין הודעות. היה הראשון! 💬</p>';
+                return;
+            }
+            container.innerHTML = data.messages.slice(-5).reverse().map(m => `
+                <div class="message-card">
+                    <strong>${m.author}</strong>
+                    <p style="margin:0; font-size:14px;">${m.text}</p>
+                    <small>${m.time}</small>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('main-latest-messages').innerHTML = 
+                '<p style="text-align:center; color:#94a3b8;">לא ניתן לטעון הודעות</p>';
+        });
+}
+
+function loadMembers() {
+    document.getElementById('search-results').innerHTML = 
+        '<div class="loading"><div class="spinner"></div>טוען חברים...</div>';
+    
+    fetch(config.sheetsURL + '?action=getUsers')
+        .then(r => r.json())
+        .then(data => {
+            allMembers = data.users || [];
+            searchMembers();
+        })
+        .catch(() => {
+            document.getElementById('search-results').innerHTML = 
+                '<div class="card"><p style="text-align:center;">שגיאת חיבור</p></div>';
+        });
+}
+
+function searchMembers() {
+    const query = (document.getElementById('search-query').value || '').toLowerCase();
+    const roleFilter = document.getElementById('search-role-filter') ? 
+                       document.getElementById('search-role-filter').value : 'all';
+    
+    const filtered = allMembers.filter(u => {
+        const matchQuery = !query || 
+            u.firstName.toLowerCase().includes(query) || 
+            u.lastName.toLowerCase().includes(query) || 
+            (u.location || '').toLowerCase().includes(query);
+        const matchRole = roleFilter === 'all' || u.role === roleFilter;
+        return matchQuery && matchRole;
+    });
+    
+    const container = document.getElementById('search-results');
+    
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="card"><p style="text-align:center;">לא נמצאו חברים</p></div>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(u => `
+        <div class="member-card">
+            <strong style="color:#1e40af;">${getRoleIcon(u.role)} ${u.firstName} ${u.lastName}</strong>
+            <span class="badge badge-member">${getRoleLabel(u.role)}</span>
+            <p style="margin: 6px 0 0 0; font-size:13px;">
+                📍 ${u.location || ''}
+                ${u.bio ? '<br>' + u.bio : ''}
+            </p>
+        </div>
+    `).join('');
+}
+
+function loadForums() {
+    fetch(config.sheetsURL + '?action=getForums')
+        .then(r => r.json())
+        .then(data => {
+            allForums = data.forums || [];
+            const container = document.getElementById('extra-forums');
+            container.innerHTML = allForums.map(f => `
+                <div class="forum-card" onclick="openForum('${f.id}', '${f.title}', '${f.desc}')">
+                    <h3>💬 ${f.title}</h3>
+                    <p style="margin:0; font-size:13px;">${f.desc || ''}</p>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function openForum(forumId, title, desc) {
+    currentForum = forumId;
+    document.getElementById('forum-view-title').textContent = title;
+    document.getElementById('forum-view-desc').textContent = desc;
+    
+    document.getElementById('forum-messages').innerHTML = 
+        '<div class="loading"><div class="spinner"></div>טוען הודעות...</div>';
+    
+    showScreen('forum-view');
+    
+    fetch(config.sheetsURL + `?action=getMessages&forumType=${forumId}`)
+        .then(r => r.json())
+        .then(data => {
+            const msgs = data.messages || [];
+            if (msgs.length === 0) {
+                document.getElementById('forum-messages').innerHTML = 
+                    '<div class="card"><p style="text-align:center;">עדיין אין הודעות. היה הראשון! 💬</p></div>';
+                return;
+            }
+            document.getElementById('forum-messages').innerHTML = msgs.map(m => `
+                <div class="message-card">
+                    <strong>${m.author}</strong>
+                    <p style="margin:0; font-size:14px;">${m.text}</p>
+                    <small>${m.time}</small>
+                </div>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('forum-messages').innerHTML = 
+                '<div class="card"><p>שגיאת חיבור</p></div>';
+        });
+}
+
+function postMessage() {
+    const text = document.getElementById('new-message-text').value.trim();
+    if (!text) { alert('אנא כתוב הודעה'); return; }
+    
+    const msgData = {
+        action: 'postMessage',
+        forumType: currentForum,
+        author: currentUser.firstName + ' ' + currentUser.lastName,
+        text: text
+    };
+    
+    fetch(config.sheetsURL, {
+        method: 'POST',
+        body: JSON.stringify(msgData)
+    })
+    .then(r => r.json())
+    .then(() => {
+        document.getElementById('new-message-text').value = '';
+        openForum(currentForum, 
+            document.getElementById('forum-view-title').textContent,
+            document.getElementById('forum-view-desc').textContent);
+    })
+    .catch(() => alert('שגיאת שליחה. בדקי אינטרנט.'));
+}
+
+function createForum() {
+    const title = document.getElementById('new-forum-title').value.trim();
+    const desc = document.getElementById('new-forum-desc').value.trim();
+    
+    if (!title) {
+        document.getElementById('new-forum-error').textContent = 'אנא הכנס שם לפורום';
+        return;
+    }
+    
+    const forumData = {
+        action: 'createForum',
+        title: title,
+        desc: desc,
+        createdBy: currentUser.firstName + ' ' + currentUser.lastName
+    };
+    
+    fetch(config.sheetsURL, {
+        method: 'POST',
+        body: JSON.stringify(forumData)
+    })
+    .then(r => r.json())
+    .then(() => {
+        document.getElementById('new-forum-title').value = '';
+        document.getElementById('new-forum-desc').value = '';
+        loadForums();
+        showScreen('forums');
+    })
+    .catch(() => alert('שגיאה ביצירת פורום'));
+}
+
+// ================================
+// פאנל מנהל
+// ================================
+function loadAdminPanel() {
+    if (!verifyAdmin()) return;
+    
+    fetch(config.sheetsURL + '?action=getUsers')
+        .then(r => r.json())
+        .then(data => {
+            const users = data.users || [];
+            document.getElementById('admin-member-count').textContent = `סה"כ ${users.length} חברים`;
+            document.getElementById('admin-members-list').innerHTML = users.map(u => `
+                <div class="member-card" style="margin-bottom:8px;">
+                    <strong>${u.firstName} ${u.lastName}</strong>
+                    <span class="badge badge-member">${getRoleLabel(u.role)}</span>
+                    <p style="margin:4px 0 0 0; font-size:12px; color:#64748b;">📱 ${u.phone} | 📍 ${u.location}</p>
+                </div>
+            `).join('');
+        })
+        .catch(() => {});
+}
+
+function verifyAdmin() {
+    const pass = prompt('הכנס סיסמת מנהל:');
+    if (pass === adminPassword || pass === config.adminPassword) {
+        return true;
+    }
+    alert('סיסמה שגויה');
+    showScreen('main');
+    return false;
+}
+
+function exportToExcel() {
+    fetch(config.sheetsURL + '?action=getUsers')
+        .then(r => r.json())
+        .then(data => {
+            const users = data.users || [];
+            let csv = 'שם פרטי,שם משפחה,יישוב,טלפון,תפקיד,אודות\n';
+            users.forEach(u => {
+                csv += `${u.firstName},${u.lastName},${u.location},${u.phone},${getRoleLabel(u.role)},${u.bio || ''}\n`;
+            });
+            
+            const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${config.communityName}_members.csv`;
+            a.click();
+        });
+}
+
+// ================================
+// יציאה
+// ================================
+function logout() {
+    if (confirm('האם ברצונך לצאת?')) {
+        currentUser = null;
+        localStorage.removeItem('current_user');
+        document.getElementById('nav-bottom').style.display = 'none';
+        showScreen('welcome');
+    }
+}
 </script>
 </body>
 </html>
