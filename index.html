@@ -420,13 +420,25 @@ function ManageTips({ session }) {
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState({});
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const load = () => api('approved', {}).then(res => setTips(res.tips || []));
   useEffect(() => { load(); }, []);
 
+  const filteredTips = useMemo(() => {
+    if (!tips) return null;
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return tips;
+    return tips.filter(t =>
+      (t.name||'').toLowerCase().includes(q) ||
+      (t.essence||'').toLowerCase().includes(q) ||
+      (t.submitter||'').toLowerCase().includes(q)
+    );
+  }, [tips, searchQuery]);
+
   const toggleSelect = (id) => setSelected(s => ({ ...s, [id]: !s[id] }));
   const selectedIds = Object.keys(selected).filter(id => selected[id]);
-  const selectAll = () => setSelected(Object.fromEntries(tips.map(t => [t.id, true])));
+  const selectAll = () => setSelected(Object.fromEntries((filteredTips||[]).map(t => [t.id, true])));
   const clearSelection = () => setSelected({});
 
   const deleteSelected = async () => {
@@ -481,8 +493,10 @@ function ManageTips({ session }) {
 
   return (
     <div className="p-4 space-y-3">
+      <input type="text" placeholder="חיפוש טיפ לעריכה (לפי שם, מהות או מציע)..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
+        className="w-full bg-white text-gray-800 px-4 py-3 rounded-2xl text-sm font-semibold placeholder-gray-400 focus:outline-none border-2 border-sky-300 focus:border-sky-600" />
       <h3 className="font-extrabold text-lg text-gray-800 flex items-center justify-between flex-wrap gap-2">
-        <span>ניהול טיפים מאושרים ({tips.length})</span>
+        <span>ניהול טיפים מאושרים ({filteredTips.length}{searchQuery.trim() ? ` מתוך ${tips.length}` : ''})</span>
         <div className="flex gap-2">
           <button onClick={selectAll}
             className="text-xs px-3 py-1.5 rounded-full font-bold border-2 border-sky-600 text-sky-700 btn-3d">בחר הכל</button>
@@ -498,7 +512,8 @@ function ManageTips({ session }) {
           )}
         </div>
       </h3>
-      {tips.map(t => (
+      {filteredTips.length === 0 && <p className="text-center text-gray-400 py-6">לא נמצאו טיפים תואמים לחיפוש</p>}
+      {filteredTips.map(t => (
         <div key={t.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2">
           {editingId === t.id ? (
             <div className="space-y-2">
